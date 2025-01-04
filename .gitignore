@@ -1,0 +1,5 @@
+#ignore GoogleChromeDriver
+/chromedriver-mac-arm64/
+
+#ignore .DS_store
+*.DS_store
