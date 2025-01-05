@@ -3,10 +3,13 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup   # web spider
+from collections import OrderedDict # maintain the order of lines
 import time
 import re
 import os       # open file
 import opencc   # sim-Chi to tra-Chi
+import requests # web request
+from urllib.parse import quote # encode any special characters in the URL
 
 # Set up Selenium with Chrome WebDriver
 def setup_driver():
@@ -123,7 +126,53 @@ def read_parse_convert(dir_path, fixed_dir_path):
         with open(converted_file_path, 'w', encoding='utf-8') as file:
             file.writelines(parsed_content)
 
+#dir_path = "web_data_remove_emptylines/extracted_img/"
+#output_filename = "all_cards_img.txt"
+def merge_to_singlefile_ignore_duplicated_lines(dir_path, output_filename):
+    # Use OrderedDict to store unique lines while maintaining order
+    unique_lines = OrderedDict()
 
+    # Collect all .txt files with the specific suffix pattern
+    txt_files = [f for f in os.listdir(dir_path) if f.endswith(".txt") and "_" in f]
+    # Sort the files by their numeric suffix
+    sorted_files = sorted(txt_files, key=lambda x: int(x.split("_")[-1].split(".")[0]))
 
-        
+    # Read all .txt files in the directory
+    for file in sorted_files:
+        file_path = os.path.join(dir_path, file)
+        with open(file_path, "r", encoding="utf-8") as file:
+            for line in file:
+                unique_lines[line.strip()] = None  # Add to OrderedDict
+    # Write the unique lines to the output file
+    with open(output_filename, "w", encoding="utf-8") as output:
+        output.write("\n".join(unique_lines.keys()) + "\n")
+    print(f"Merged and cleaned file saved as '{output_filename}'")
+#input_file = "all_cards_img.txt"
+#save_dir = "images"
+def get_images(input_file, save_dir):
+    with open(input_file, "r", encoding="utf-8") as file:
+        url_list = file.readlines()
+
+    os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
+
+    # Download images
+    for i, url in enumerate(url_list, start=1):
+        try:
+            clean_url = url.strip()
+            response = requests.get(clean_url, stream=True)
+            response.raise_for_status()  # Raise an error for HTTP issues
+            # Extract file extension from the URL, fallback to ".jpg" if no extension is found
+            ext = os.path.splitext(url)[-1] if os.path.splitext(url)[-1] else ".jpg"
+            # Create file name with proper extension
+            file_name = os.path.join(save_dir, f"image_{i}{ext}")
+            # Save the image
+            with open(file_name, "wb") as f:
+                for chunk in response.iter_content(1024):
+                    f.write(chunk)
+            print(f"Downloaded: {file_name}")
+        except Exception as e:
+            print(f"Failed to download {url}: {e}")
+
+    print("All downloads completed!")
+
 
