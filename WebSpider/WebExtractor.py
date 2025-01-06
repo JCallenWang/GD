@@ -9,7 +9,6 @@ import re
 import os       # open file
 import opencc   # sim-Chi to tra-Chi
 import requests # web request
-from urllib.parse import quote # encode any special characters in the URL
 
 # Set up Selenium with Chrome WebDriver
 def setup_driver():
